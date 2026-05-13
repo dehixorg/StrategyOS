@@ -10,6 +10,7 @@ const executionRouter = require('./routes/execution')
 const moduleRouter = require('./routes/module')
 const earningsRouter = require('./routes/earnings')
 const marketRouter   = require('./routes/market')
+const aiRouter       = require('./routes/ai')
 const { executeStrategy } = require('./services/strategyEngine')
 const Strategy = require('./models/Strategy')
 
@@ -29,6 +30,7 @@ app.use('/execution', executionRouter)
 app.use('/module', moduleRouter)
 app.use('/earnings', earningsRouter)
 app.use('/market',   marketRouter)
+app.use('/ai',       aiRouter)
 
 app.get('/health', (_, res) => res.json({
   status: 'ok',
@@ -37,6 +39,7 @@ app.get('/health', (_, res) => res.json({
     sosovalue: !!process.env.SOSOVALUE_API_KEY && process.env.SOSOVALUE_API_KEY !== 'your_sosovalue_api_key',
     sodex: !!process.env.SODEX_API_KEY && process.env.SODEX_API_KEY !== 'your_sodex_api_key',
     valuechain: !!process.env.CONTRACT_ADDRESS && process.env.CONTRACT_ADDRESS !== '0xYourContractAddress',
+    ai: !!process.env.AZURE_OPENAI_KEY,
   },
 }))
 

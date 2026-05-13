@@ -40,6 +40,9 @@ export default function Builder() {
   const [strategyName, setStrategyName] = useState('My Strategy')
   const [saving, setSaving] = useState(false)
   const [savedId, setSavedId] = useState(null)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [showAiModal, setShowAiModal] = useState(false)
   const reactFlowWrapper = useRef(null)
   const [reactFlowInstance, setReactFlowInstance] = useState(null)
   const navigate = useNavigate()
@@ -74,6 +77,24 @@ export default function Builder() {
     setEdges([])
     setSelectedNode(null)
     setSavedId(null)
+  }
+
+  const handleAiGenerate = async () => {
+    if (!aiPrompt.trim()) return
+    setAiLoading(true)
+    try {
+      const { data } = await api.post('/ai/generate-strategy', { prompt: aiPrompt })
+      setNodes(data.nodes)
+      setEdges(data.edges)
+      setStrategyName(data.name)
+      setShowAiModal(false)
+      setAiPrompt('')
+      toast.success(`AI built "${data.name}" — review and save!`)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'AI generation failed.')
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   const onConnect = useCallback(
@@ -155,11 +176,17 @@ export default function Builder() {
           ))}
         </div>
 
-        {/* Quick-build template */}
-        <div className="p-3 border-t border-slate-700">
+        {/* AI + Quick-build */}
+        <div className="p-3 border-t border-slate-700 space-y-2">
+          <button
+            onClick={() => setShowAiModal(true)}
+            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-medium py-2 rounded-lg transition-all"
+          >
+            ✨ AI Generate Strategy
+          </button>
           <button
             onClick={applyTemplate}
-            className="w-full bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-medium py-2 rounded-lg transition-colors mb-2"
+            className="w-full bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-medium py-2 rounded-lg transition-colors"
           >
             ⚡ Quick Build Template
           </button>
@@ -248,6 +275,65 @@ export default function Builder() {
         </div>
         <ConfigPanel node={selectedNode} onConfigChange={onConfigChange} />
       </div>
+
+      {/* AI Generate Modal */}
+      {showAiModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 border border-slate-600 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-2xl">✨</span>
+              <div>
+                <h2 className="text-white font-semibold">AI Strategy Generator</h2>
+                <p className="text-slate-400 text-xs">Describe your strategy in plain English</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-4">
+              <p className="text-xs text-slate-500">Examples:</p>
+              {[
+                'Conservative BTC strategy, stop loss 3%, take profit 8%',
+                'Aggressive ETH momentum play, high confidence only',
+                'SOL with tight risk management and low slippage',
+              ].map((ex) => (
+                <button
+                  key={ex}
+                  onClick={() => setAiPrompt(ex)}
+                  className="w-full text-left text-xs bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg transition-colors"
+                >
+                  "{ex}"
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder="Describe your trading strategy..."
+              rows={3}
+              className="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none mb-4"
+              onKeyDown={(e) => { if (e.key === 'Enter' && e.metaKey) handleAiGenerate() }}
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowAiModal(false); setAiPrompt('') }}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm py-2.5 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAiGenerate}
+                disabled={aiLoading || !aiPrompt.trim()}
+                className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                {aiLoading ? (
+                  <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Generating...</>
+                ) : '✨ Generate Strategy'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

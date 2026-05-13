@@ -34,6 +34,8 @@ export default function StrategyDetails() {
   const [executing, setExecuting] = useState(false)
   const [lastResult, setLastResult] = useState(null)
   const [claiming, setClaiming] = useState(false)
+  const [aiInsight, setAiInsight] = useState(null)
+  const [aiLoading, setAiLoading] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -89,6 +91,18 @@ export default function StrategyDetails() {
       toast.error(err.response?.data?.message || 'Execution failed')
     } finally {
       setExecuting(false)
+    }
+  }
+
+  const handleAiAnalyze = async () => {
+    setAiLoading(true)
+    try {
+      const { data } = await api.get(`/ai/analyze/${id}`)
+      setAiInsight(data.insight)
+    } catch {
+      toast.error('AI analysis failed.')
+    } finally {
+      setAiLoading(false)
     }
   }
 
@@ -198,6 +212,30 @@ export default function StrategyDetails() {
         <MetricCard label="Total Trades" value={stats.totalTrades || 0} />
         <MetricCard label="Win Rate" value={stats.winRate ? `${(stats.winRate * 100).toFixed(0)}%` : '—'} />
         <MetricCard label="Usage Count" value={strategy.usageCount || 0} sub="times activated by others" />
+      </div>
+
+      {/* AI Insights */}
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">✨</span>
+            <h2 className="text-sm font-semibold text-white">AI Strategy Insights</h2>
+          </div>
+          <button
+            onClick={handleAiAnalyze}
+            disabled={aiLoading}
+            className="bg-violet-700 hover:bg-violet-600 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+          >
+            {aiLoading
+              ? <><span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Analyzing...</>
+              : '✨ Analyze with AI'}
+          </button>
+        </div>
+        {aiInsight ? (
+          <p className="text-slate-300 text-sm leading-relaxed">{aiInsight}</p>
+        ) : (
+          <p className="text-slate-500 text-sm">Click "Analyze with AI" to get GPT-4o-mini insights on your strategy's performance and improvement suggestions.</p>
+        )}
       </div>
 
       {/* Creator earnings */}
