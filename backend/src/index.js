@@ -25,17 +25,20 @@ const allowedOrigins = [
   'http://localhost:3000',
 ].filter(Boolean)
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile, Postman, curl)
     if (!origin) return callback(null, true)
-    // Allow any vercel.app subdomain
     if (origin.endsWith('.vercel.app')) return callback(null, true)
     if (allowedOrigins.includes(origin)) return callback(null, true)
-    callback(null, true) // open for hackathon demo — tighten post-launch
+    callback(null, true)
   },
   credentials: true,
-}))
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}
+
+app.use(cors(corsOptions))
+app.options('*', cors(corsOptions)) // handle preflight for all routes
 app.use(express.json())
 
 // Routes
