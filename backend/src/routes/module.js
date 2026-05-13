@@ -1,4 +1,6 @@
 const express = require('express')
+const Module = require('../models/Module')
+const auth = require('../middleware/auth')
 
 const router = express.Router()
 
@@ -47,23 +49,38 @@ const MODULES = [
   },
 ]
 
-router.get('/browse', (req, res) => {
+// POST /module/publish — authenticated, saves to DB
+router.post('/publish', auth, async (req, res) => {
+  try {
+    const { name, category, type, description, tags, price, creatorWallet } = req.body
+    if (!name || !description) return res.status(400).json({ message: 'Name and description required' })
+
+    const mod = await Module.create({
+      name, category, type,
+      description, tags: tags || [],
+      price: parseFloat(price) || 0,
+      creatorId: req.userId,
+      creatorWallet: creatorWallet || '',
+      rating: 5.0,
+      usageCount: 0,
+    })
+    res.status(201).json({ success: true, module: mod })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+router.get('/browse', async (req, res) => {
+  // Merge hardcoded + user-published modules
+  let dbModules = []
+  try { dbModules = await Module.find().sort({ rating: -1 }).lean() } catch { /* pass */ }
+  const all = [...MODULES, ...dbModules.map((m) => ({ ...m, id: m._id }))]
   const { category, sortBy } = req.query
-  let modules = [...MODULES]
-
-  if (category) {
-    modules = modules.filter((m) => m.category.toLowerCase() === category.toLowerCase())
-  }
-
-  if (sortBy === 'rating') {
-    modules.sort((a, b) => b.rating - a.rating)
-  } else if (sortBy === 'usage') {
-    modules.sort((a, b) => b.usageCount - a.usageCount)
-  } else if (sortBy === 'price') {
-    modules.sort((a, b) => a.price - b.price)
-  }
-
-  res.json({ modules })
+  let modules = category ? all.filter((m) => m.category.toLowerCase() === category.toLowerCase()) : all
+  if (sortBy === 'usage') modules.sort((a, b) => b.usageCount - a.usageCount)
+  else if (sortBy === 'price') modules.sort((a, b) => a.price - b.price)
+  else modules.sort((a, b) => b.rating - a.rating)
+  return res.json({ modules })
 })
 
 module.exports = router

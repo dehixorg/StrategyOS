@@ -154,7 +154,7 @@ export default function StrategyDetails() {
           }`}>{strategy.status}</span>
           {strategy.onChainTxHash && (
             <a
-              href={`https://mainnet-gw.sodex.dev/tx/${strategy.onChainTxHash}`}
+              href={`https://sepolia.arbiscan.io/tx/${strategy.onChainTxHash}`}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-indigo-400 hover:text-indigo-300 font-mono"
@@ -197,7 +197,7 @@ export default function StrategyDetails() {
               </span>
             )}
             {lastResult.txHash && (
-              <a href={`https://mainnet-gw.sodex.dev/tx/${lastResult.txHash}`} target="_blank" rel="noreferrer"
+              <a href={`https://sepolia.arbiscan.io/tx/${lastResult.txHash}`} target="_blank" rel="noreferrer"
                 className="text-indigo-400 text-xs font-mono hover:text-indigo-300">
                 ⛓ {lastResult.txHash.slice(0, 12)}...
               </a>
@@ -356,7 +356,7 @@ export default function StrategyDetails() {
                     </td>
                     <td className="px-6 py-3 text-right font-mono text-xs">
                       {ex.onChainTxHash ? (
-                        <a href={`https://mainnet-gw.sodex.dev/tx/${ex.onChainTxHash}`} target="_blank" rel="noreferrer"
+                        <a href={`https://sepolia.arbiscan.io/tx/${ex.onChainTxHash}`} target="_blank" rel="noreferrer"
                           className="text-indigo-400 hover:text-indigo-300">
                           {ex.onChainTxHash.slice(0, 10)}...
                         </a>

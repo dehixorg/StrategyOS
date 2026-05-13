@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import api from '../lib/api'
 
 // Fallback hardcoded modules if backend is not yet seeded
@@ -99,11 +99,19 @@ export default function Marketplace() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Module Marketplace</h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Browse AI modules. Each execution earns creators SOSO tokens — 70% strategy creator, 20% module creators.
-        </p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Module Marketplace</h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Browse AI modules. Each execution earns creators SOSO tokens — 70% strategy creator, 20% module creators.
+          </p>
+        </div>
+        <Link
+          to="/publish-module"
+          className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+        >
+          + Publish Module
+        </Link>
       </div>
 
       {/* Filters */}

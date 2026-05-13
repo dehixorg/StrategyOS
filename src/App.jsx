@@ -5,6 +5,7 @@ import Builder from './pages/Builder'
 import StrategyDetails from './pages/StrategyDetails'
 import Marketplace from './pages/Marketplace'
 import ExploreStrategies from './pages/ExploreStrategies'
+import PublishModule from './pages/PublishModule'
 import NotFound from './pages/NotFound'
 import Navbar from './components/Navbar'
 
@@ -28,6 +29,7 @@ export default function App() {
                 <Route path="/builder"        element={<Builder />} />
                 <Route path="/strategy/:id"   element={<StrategyDetails />} />
                 <Route path="/marketplace"    element={<Marketplace />} />
+                <Route path="/publish-module" element={<PublishModule />} />
                 <Route path="/strategies"     element={<ExploreStrategies />} />
                 <Route path="/"              element={<Navigate to="/dashboard" replace />} />
                 <Route path="*"              element={<NotFound />} />
