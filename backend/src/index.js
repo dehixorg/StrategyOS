@@ -17,6 +17,8 @@ const Strategy = require('./models/Strategy')
 const app = express()
 const PORT = process.env.PORT || 3001
 
+app.set('trust proxy', 1) // Required on Render/Railway/Heroku (behind a load balancer)
+
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:5173',
