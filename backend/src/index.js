@@ -37,7 +37,7 @@ app.get('/health', (_, res) => res.json({
   timestamp: new Date().toISOString(),
   integrations: {
     sosovalue: !!process.env.SOSOVALUE_API_KEY && process.env.SOSOVALUE_API_KEY !== 'your_sosovalue_api_key',
-    sodex: !!process.env.SODEX_API_KEY && process.env.SODEX_API_KEY !== 'your_sodex_api_key',
+    sodex: !!(process.env.SODEX_WALLET_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY),
     valuechain: !!process.env.CONTRACT_ADDRESS && process.env.CONTRACT_ADDRESS !== '0xYourContractAddress',
     ai: !!process.env.AZURE_OPENAI_KEY,
   },

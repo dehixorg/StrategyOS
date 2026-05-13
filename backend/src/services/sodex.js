@@ -17,13 +17,24 @@ const SYMBOL_IDS = {
 }
 
 function getConfig() {
-  const key = process.env.SODEX_API_KEY
+  // SoDEX uses EIP-712 wallet signing as auth — no separate API key needed
   const pk = process.env.SODEX_WALLET_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY
   const net = process.env.SODEX_NETWORK || 'testnet'
   const base = net === 'mainnet' ? MAINNET_BASE : TESTNET_BASE
   const chainId = CHAIN_IDS[net]
-  const configured = key && key !== 'your_sodex_api_key' && pk && pk !== 'your_wallet_private_key_for_logging'
-  return { configured, base, chainId, pk, accountID: process.env.SODEX_ACCOUNT_ID }
+  const validPk = pk && pk !== 'your_wallet_private_key_for_logging' && pk !== 'your_evm_wallet_private_key'
+  const configured = !!validPk
+
+  // Derive wallet address to use as accountID if not explicitly set
+  let accountID = process.env.SODEX_ACCOUNT_ID || '0'
+  if (validPk && (!process.env.SODEX_ACCOUNT_ID || process.env.SODEX_ACCOUNT_ID === 'your_sodex_account_id')) {
+    try {
+      const wallet = new ethers.Wallet(pk)
+      accountID = wallet.address
+    } catch { accountID = '0' }
+  }
+
+  return { configured, base, chainId, pk, accountID }
 }
 
 /**
