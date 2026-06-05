@@ -5,6 +5,7 @@ const cors = require('cors')
 const cron = require('node-cron')
 
 const authRouter = require('./routes/auth')
+const userRouter = require('./routes/user')
 const strategyRouter = require('./routes/strategy')
 const executionRouter = require('./routes/execution')
 const moduleRouter = require('./routes/module')
@@ -43,6 +44,7 @@ app.use(express.json())
 
 // Routes
 app.use('/auth', authRouter)
+app.use('/user', userRouter)
 app.use('/strategy', strategyRouter)
 app.use('/execution', executionRouter)
 app.use('/module', moduleRouter)

@@ -28,7 +28,7 @@ async function runSentimentModule(config) {
   }
 }
 
-async function runRiskModule(sentimentOutput, config) {
+async function runRiskModule(sentimentOutput, config, portfolioBalance = 10000) {
   if (!sentimentOutput.pass) {
     return { pass: false, maxSize: 0, stopLoss: 0, takeProfit: 0, currentPrice: 0, reason: 'Sentiment failed' }
   }
@@ -46,9 +46,7 @@ async function runRiskModule(sentimentOutput, config) {
     price = md.price
   }
 
-  // Portfolio value is tracked per-user in future; using a fixed demo value for wave 1
-  const portfolioValue = 10000  // USD
-  const maxSize = portfolioValue * (maxPositionPct / 100)
+  const maxSize = portfolioBalance * (maxPositionPct / 100)
 
   return {
     pass: true,
@@ -110,9 +108,13 @@ async function executeStrategy(strategyId) {
   const riskMod      = modules.find((m) => m.type === 'RiskCheck')
   const executorMod  = modules.find((m) => m.type === 'Executor')
 
+  const User = require('../models/User') // inline require to avoid circular deps if any
+  const creator = await User.findById(strategy.creatorId).select('portfolioBalance')
+  const portfolioBalance = creator?.portfolioBalance || 10000
+
   // ── Run pipeline ──────────────────────────────────────────────────────────
   const sentimentOutput = await runSentimentModule(sentimentMod?.config || {})
-  const riskOutput      = await runRiskModule(sentimentOutput, riskMod?.config || {})
+  const riskOutput      = await runRiskModule(sentimentOutput, riskMod?.config || {}, portfolioBalance)
   const executorOutput  = await runExecutorModule(riskOutput, executorMod?.config || {})
 
   // ── Submit trade ──────────────────────────────────────────────────────────

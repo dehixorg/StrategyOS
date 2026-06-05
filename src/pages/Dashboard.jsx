@@ -26,20 +26,39 @@ export default function Dashboard() {
   const [strategies, setStrategies] = useState([])
   const [loading, setLoading] = useState(true)
   const [actionId, setActionId] = useState(null)
+  const [portfolioBalance, setPortfolioBalance] = useState(10000)
+  const [depositing, setDepositing] = useState(false)
   const navigate = useNavigate()
 
-  const fetchStrategies = async () => {
+  const fetchStrategiesAndProfile = async () => {
     try {
-      const { data } = await api.get('/strategy/my-strategies')
-      setStrategies(data.strategies || [])
+      const [stratRes, profileRes] = await Promise.all([
+        api.get('/strategy/my-strategies'),
+        api.get('/user/profile').catch(() => ({ data: { user: { portfolioBalance: 10000 } } }))
+      ])
+      setStrategies(stratRes.data.strategies || [])
+      setPortfolioBalance(profileRes.data.user?.portfolioBalance || 10000)
     } catch {
-      toast.error('Failed to load strategies.')
+      toast.error('Failed to load dashboard data.')
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchStrategies() }, [])
+  useEffect(() => { fetchStrategiesAndProfile() }, [])
+
+  const handleDeposit = async () => {
+    setDepositing(true)
+    try {
+      const { data } = await api.post('/user/deposit', { amount: 10000 })
+      setPortfolioBalance(data.balance)
+      toast.success('Deposited $10,000 simulated USDC to portfolio.')
+    } catch {
+      toast.error('Failed to deposit.')
+    } finally {
+      setDepositing(false)
+    }
+  }
 
   const handleActivate = async (id) => {
     setActionId(id)
@@ -69,17 +88,33 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-white">My Strategies</h1>
           <p className="text-slate-400 text-sm mt-1">Manage and monitor your AI trading strategies</p>
         </div>
-        <button
-          onClick={() => navigate('/builder')}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-        >
-          + New Strategy
-        </button>
+        
+        <div className="flex items-center gap-4">
+          <div className="bg-slate-800 border border-slate-700 px-4 py-2 rounded-lg flex items-center gap-4">
+            <div>
+              <p className="text-xs text-slate-500 uppercase tracking-wider font-bold">Simulated Balance</p>
+              <p className="text-lg font-mono font-bold text-white">${portfolioBalance.toLocaleString()}</p>
+            </div>
+            <button
+              onClick={handleDeposit}
+              disabled={depositing}
+              className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 text-xs font-bold px-3 py-1.5 rounded-md transition-colors"
+            >
+              {depositing ? '...' : '+ $10k'}
+            </button>
+          </div>
+          <button
+            onClick={() => navigate('/builder')}
+            className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors h-[42px]"
+          >
+            + New Strategy
+          </button>
+        </div>
       </div>
 
       <SentimentTicker />
