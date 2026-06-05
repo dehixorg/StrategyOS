@@ -104,18 +104,73 @@ async function executeStrategy(strategyId) {
   }
 
   const modules     = strategy.config.modules || []
-  const sentimentMod = modules.find((m) => m.type === 'Sentiment')
-  const riskMod      = modules.find((m) => m.type === 'RiskCheck')
-  const executorMod  = modules.find((m) => m.type === 'Executor')
+  const connections = strategy.config.connections || []
 
   const User = require('../models/User') // inline require to avoid circular deps if any
   const creator = await User.findById(strategy.creatorId).select('portfolioBalance')
   const portfolioBalance = creator?.portfolioBalance || 10000
 
-  // ── Run pipeline ──────────────────────────────────────────────────────────
-  const sentimentOutput = await runSentimentModule(sentimentMod?.config || {})
-  const riskOutput      = await runRiskModule(sentimentOutput, riskMod?.config || {}, portfolioBalance)
-  const executorOutput  = await runExecutorModule(riskOutput, executorMod?.config || {})
+  // ── Build DAG and Topological Sort ────────────────────────────────────────
+  const adj = {}
+  const inDegree = {}
+  modules.forEach(m => { adj[m.id] = []; inDegree[m.id] = 0 })
+
+  connections.forEach(c => {
+    if (adj[c.from] && inDegree[c.to] !== undefined) {
+      adj[c.from].push(c.to)
+      inDegree[c.to]++
+    }
+  })
+
+  const queue = modules.filter(m => inDegree[m.id] === 0).map(m => m.id)
+  const sortedIds = []
+  while (queue.length > 0) {
+    const curr = queue.shift()
+    sortedIds.push(curr)
+    adj[curr].forEach(neighbor => {
+      inDegree[neighbor]--
+      if (inDegree[neighbor] === 0) queue.push(neighbor)
+    })
+  }
+
+  // Fallback if no edges exist (backward compatibility for old strategies)
+  if (sortedIds.length === 0 && modules.length > 0) {
+    sortedIds.push(...modules.map(m => m.id))
+  }
+
+  // ── Run DAG Pipeline ──────────────────────────────────────────────────────
+  let accumulatedState = { pass: true, pair: 'BTC/USD', maxSize: 0, currentPrice: 0 }
+  let finalExecutorOutput = null
+  let finalSentimentOutput = null
+  let finalRiskOutput = null
+
+  for (const nodeId of sortedIds) {
+    if (!accumulatedState.pass) break; // Circuit break if any node fails
+
+    const mod = modules.find(m => m.id === nodeId)
+    const type = (mod.type || '').toLowerCase()
+
+    if (type.includes('sentiment')) {
+      const out = await runSentimentModule(mod.config)
+      finalSentimentOutput = out
+      accumulatedState = { ...accumulatedState, ...out, pass: out.pass }
+    } 
+    else if (type.includes('risk')) {
+      const out = await runRiskModule(accumulatedState, mod.config, portfolioBalance)
+      finalRiskOutput = out
+      accumulatedState = { ...accumulatedState, ...out, pass: out.pass }
+    } 
+    else if (type.includes('exec')) {
+      const out = await runExecutorModule(accumulatedState, mod.config)
+      finalExecutorOutput = out
+      accumulatedState = { ...accumulatedState, ...out, pass: out.pass }
+    }
+  }
+
+  // Fallbacks for logging if specific nodes were missing in the DAG
+  const sentimentOutput = finalSentimentOutput || { score: 0, confidence: 0, pass: accumulatedState.pass, source: 'none' }
+  const riskOutput = finalRiskOutput || { pass: accumulatedState.pass, maxSize: accumulatedState.maxSize || 0, stopLoss: 0, takeProfit: 0 }
+  const executorOutput = finalExecutorOutput || { action: 'HOLD', size: 0, reason: accumulatedState.pass ? 'No executor node' : 'Pipeline failed' }
 
   // ── Submit trade ──────────────────────────────────────────────────────────
   let tradePlaced = false

@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 
 const moduleSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  type: { type: String, enum: ['Sentiment', 'RiskCheck', 'Executor'], required: true },
+  type: { type: String, required: true },
   category: { type: String, required: true },
   description: { type: String, default: '' },
   creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },

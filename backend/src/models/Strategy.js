@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 
 const moduleSchema = new mongoose.Schema({
   id: String,
-  type: { type: String, enum: ['Sentiment', 'RiskCheck', 'Executor'] },
+  type: { type: String, required: true },
   config: { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { _id: false })
 
