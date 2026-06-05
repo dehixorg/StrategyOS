@@ -12,7 +12,7 @@ import { toast } from '../lib/toast.jsx'
 
 const nodeTypes = { moduleNode: ModuleNode }
 
-const PALETTE_MODULES = [
+const DEFAULT_PALETTE = [
   { type: 'Sentiment', label: 'Sentiment Analysis', icon: '🧠', desc: 'Live sentiment via SoSoValue API' },
   { type: 'RiskCheck', label: 'Risk Check',         icon: '🛡', desc: 'Position sizing & stop-loss' },
   { type: 'Executor',  label: 'Executor',            icon: '⚡', desc: 'EIP-712 orders on SoDEX' },
@@ -46,6 +46,29 @@ export default function Builder() {
   const reactFlowWrapper = useRef(null)
   const [reactFlowInstance, setReactFlowInstance] = useState(null)
   const navigate = useNavigate()
+  const [paletteModules, setPaletteModules] = useState(DEFAULT_PALETTE)
+
+  useEffect(() => {
+    // Fetch dynamically published modules for the palette
+    api.get('/module/browse').then(({ data }) => {
+      if (data.modules && data.modules.length > 0) {
+        // Map backend modules to palette format
+        const dynamicPalette = data.modules.map(m => ({
+          type: m.type,
+          label: m.name,
+          icon: m.category === 'Sentiment' ? '🧠' : m.category === 'Risk' ? '🛡' : '⚡',
+          desc: m.description.substring(0, 40) + '...'
+        }))
+        // Deduplicate by type
+        const unique = []
+        const seen = new Set()
+        dynamicPalette.forEach(m => {
+          if (!seen.has(m.type)) { seen.add(m.type); unique.push(m); }
+        })
+        setPaletteModules(unique)
+      }
+    }).catch(() => {})
+  }, [])
 
   // Auto-add module if redirected from Marketplace
   useEffect(() => {
@@ -160,7 +183,7 @@ export default function Builder() {
           <p className="text-xs text-slate-400 mt-0.5">Drag onto canvas</p>
         </div>
         <div className="p-3 space-y-2">
-          {PALETTE_MODULES.map((m) => (
+          {paletteModules.map((m) => (
             <div
               key={m.type}
               draggable
