@@ -1,6 +1,12 @@
 # StrategyOS — No-Code AI Strategy Marketplace for DeFi
 
-Build AI-powered DeFi trading strategies by drag-dropping modules. Strategy creators and module developers earn **SOSO tokens** automatically on every execution — distributed on-chain via the StrategyOS smart contract on **ValueChain**.
+**🏆 Wave 2 Buildathon Update: Native SoSoValue & SoDEX Integration**
+StrategyOS is a curated decentralized marketplace connecting professional portfolio managers with retail investors. In Wave 2, we pivoted to natively integrate the SoSoValue ecosystem:
+- **SoSoValue Sentiment Engine**: Strategies are now powered by live, multi-factor sentiment scores computed directly from the SoSoValue API (news volume, sector performance, ETF inflows).
+- **SoDEX Execution**: Capital is routed and executed via EIP-712 signed orders on the SoDEX / ValueChain Testnet.
+
+> **🧑‍⚖️ FOR JUDGES (0-Friction Testing)**
+> You do NOT need to create an account. Simply visit the live demo and click the **"Login as Guest / Judge"** button on the Auth page to instantly access the platform and view our flagship verified strategy: *SoSoValue AI Sentiment Alpha*.
 
 ---
 

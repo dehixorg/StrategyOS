@@ -6,12 +6,12 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const balance = await ethers.provider.getBalance(deployer.address);
 
-  console.log("\n=== StrategyOS Deployment — Arbitrum Sepolia ===");
+  console.log("\n=== StrategyOS Deployment — ValueChain Testnet ===");
   console.log("Deployer :", deployer.address);
   console.log("Balance  :", ethers.formatEther(balance), "ETH\n");
 
   if (balance < ethers.parseEther("0.001")) {
-    throw new Error("Insufficient ETH — need at least 0.001 ETH on Arbitrum Sepolia");
+    throw new Error("Insufficient gas token — need at least 0.001 on ValueChain Testnet");
   }
 
   // 1. Deploy MockSOSO
@@ -44,7 +44,7 @@ async function main() {
     .replace(/CONTRACT_ADDRESS=.*/,   `CONTRACT_ADDRESS=${contractAddr}`)
     .replace(/SOSO_TOKEN_ADDRESS=.*/, `SOSO_TOKEN_ADDRESS=${sosoAddr}`)
     .replace(/TREASURY_WALLET=.*/,    `TREASURY_WALLET=${deployer.address}`)
-    .replace(/VALUECHAIN_RPC=.*/,     `VALUECHAIN_RPC=https://sepolia-rollup.arbitrum.io/rpc`);
+    .replace(/VALUECHAIN_RPC=.*/,     `VALUECHAIN_RPC=https://testnet-gw.sodex.dev`);
   fs.writeFileSync(envPath, env);
   console.log("\n✅ backend/.env updated automatically\n");
 
@@ -52,7 +52,7 @@ async function main() {
   console.log("SOSO_TOKEN_ADDRESS :", sosoAddr);
   console.log("CONTRACT_ADDRESS   :", contractAddr);
   console.log("TREASURY_WALLET    :", deployer.address);
-  console.log("Explorer           : https://sepolia.arbiscan.io/address/" + contractAddr);
+  console.log("Explorer           : https://testnet.valuechain.xyz/address/" + contractAddr);
 }
 
 main().catch((e) => { console.error("❌", e.message); process.exit(1); });

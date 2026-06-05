@@ -17,5 +17,10 @@ module.exports = {
       chainId: 421614,
       accounts: validPK ? [PK] : [],
     },
+    valuechainTestnet: {
+      url: "https://testnet-gw.sodex.dev",
+      chainId: 138565,
+      accounts: validPK ? [PK] : [],
+    },
   },
 };

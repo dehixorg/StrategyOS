@@ -85,6 +85,26 @@ export default function Auth() {
               {mode === 'login' ? 'Sign up' : 'Sign in'}
             </button>
           </p>
+          <div className="mt-6 border-t border-slate-700 pt-6">
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                setEmail('judge@sosovalue.com')
+                setPassword('judge123')
+                setMode('login')
+                // A small timeout to let state update before submitting
+                setTimeout(() => {
+                  document.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))
+                }, 50)
+              }}
+              className="w-full bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-400 font-medium py-2.5 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Login as Guest / Judge
+            </button>
+          </div>
         </div>
       </div>
     </div>
