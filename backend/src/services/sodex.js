@@ -156,14 +156,16 @@ async function getMarketPrice(symbol = 'BTC/USDC') {
 }
 
 function mockSubmitOrder(order) {
-  const filled = Math.random() > 0.1
+  // Always guarantee a fill for the demo so the user sees a successful trade
+  const filled = true
+  const slippage = (Math.random() - 0.5) * 0.002 // 0.2% max slippage
   return {
-    tradeId: crypto.randomBytes(16).toString('hex'),
+    tradeId: 'sodex-sim-' + crypto.randomBytes(8).toString('hex'),
     status: filled ? 'filled' : 'failed',
-    filledPrice: (order.price || 67000) * (1 + (Math.random() - 0.5) * 0.001),
+    filledPrice: (order.price || 67000) * (1 + slippage),
     filledSize: order.size,
     exchange: order.exchange || 'SoDEX',
-    source: 'mock',
+    source: 'simulated-fallback',
   }
 }
 

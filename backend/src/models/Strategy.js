@@ -26,6 +26,9 @@ const strategySchema = new mongoose.Schema({
     totalPnL: { type: Number, default: 0 },
     winRate: { type: Number, default: 0 },
     sharpeRatio: { type: Number, default: 0 },
+    peakPnL: { type: Number, default: 0 },
+    currentDrawdown: { type: Number, default: 0 },
+    maxDrawdownThreshold: { type: Number, default: 20 }, // Pause strategy if drawdown > 20%
   },
   earnings: {
     totalSOSO: { type: Number, default: 0 },

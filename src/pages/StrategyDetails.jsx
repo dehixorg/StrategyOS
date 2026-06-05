@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../lib/api'
 import { toast } from '../lib/toast.jsx'
+import AiChatBot from '../components/AiChatBot'
 
 const MODULE_ICONS = { Sentiment: '🧠', RiskCheck: '🛡', Executor: '⚡' }
 
@@ -214,28 +215,35 @@ export default function StrategyDetails() {
         <MetricCard label="Usage Count" value={strategy.usageCount || 0} sub="times activated by others" />
       </div>
 
-      {/* AI Insights */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">✨</span>
-            <h2 className="text-sm font-semibold text-white">AI Strategy Insights</h2>
+      {/* AI Section (Insights + Chat) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 flex flex-col">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">✨</span>
+              <h2 className="text-sm font-semibold text-white">AI Strategy Insights</h2>
+            </div>
+            <button
+              onClick={handleAiAnalyze}
+              disabled={aiLoading}
+              className="bg-violet-700 hover:bg-violet-600 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              {aiLoading
+                ? <><span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Analyzing...</>
+                : '✨ Analyze with AI'}
+            </button>
           </div>
-          <button
-            onClick={handleAiAnalyze}
-            disabled={aiLoading}
-            className="bg-violet-700 hover:bg-violet-600 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
-          >
-            {aiLoading
-              ? <><span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Analyzing...</>
-              : '✨ Analyze with AI'}
-          </button>
+          <div className="flex-1 bg-slate-900/50 rounded-lg p-4 border border-slate-700/50">
+            {aiInsight ? (
+              <p className="text-slate-300 text-sm leading-relaxed">{aiInsight}</p>
+            ) : (
+              <p className="text-slate-500 text-sm">Click "Analyze with AI" to get GPT-4o-mini insights on your strategy's performance and improvement suggestions.</p>
+            )}
+          </div>
         </div>
-        {aiInsight ? (
-          <p className="text-slate-300 text-sm leading-relaxed">{aiInsight}</p>
-        ) : (
-          <p className="text-slate-500 text-sm">Click "Analyze with AI" to get GPT-4o-mini insights on your strategy's performance and improvement suggestions.</p>
-        )}
+        
+        {/* Interactive Chat Bot */}
+        <AiChatBot strategyId={id} />
       </div>
 
       {/* Creator earnings */}

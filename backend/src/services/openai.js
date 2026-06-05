@@ -84,4 +84,29 @@ async function analyzeStrategy(strategyName, stats, executions) {
   return chat(ANALYZE_SYSTEM, `Analyze this strategy: ${JSON.stringify(summary)}`)
 }
 
-module.exports = { generateStrategy, analyzeStrategy }
+const STRATEGY_CHAT_SYSTEM = `You are the AI Strategy Assistant for StrategyOS.
+You are embedded directly on a strategy's details page. 
+The user is asking you questions about this specific strategy and its recent trades.
+Be conversational, extremely helpful, and concise. 
+Explain your reasoning using the exact data provided to you in the prompt (e.g., SoSoValue sentiment scores, PnL, risk parameters).`
+
+async function chatWithStrategy(strategy, executions, userMessage) {
+  const context = {
+    strategyName: strategy.name,
+    status: strategy.status,
+    stats: strategy.stats,
+    riskConfig: strategy.config.modules?.find(m => m.type === 'RiskCheck')?.config,
+    recentExecutions: executions.slice(0, 5).map(e => ({
+      time: new Date(e.timestamp).toISOString(),
+      sentimentScore: e.moduleOutputs?.sentiment?.score,
+      riskPass: e.moduleOutputs?.risk?.pass,
+      action: e.tradePlaced ? e.moduleOutputs?.executor?.action : 'HOLD',
+      pnl: e.pnl,
+    }))
+  }
+
+  const prompt = `Context data: ${JSON.stringify(context)}\nUser question: ${userMessage}`
+  return chat(STRATEGY_CHAT_SYSTEM, prompt)
+}
+
+module.exports = { generateStrategy, analyzeStrategy, chatWithStrategy }

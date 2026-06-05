@@ -198,11 +198,32 @@ async function executeStrategy(strategyId) {
       sharpeRatio = stdDev > 0 ? parseFloat(((mean / stdDev) * Math.sqrt(288 * 365)).toFixed(2)) : 0
     }
 
+    // ── Circuit Breaker Logic ─────────────────────────────────────────────────
+    let peakPnL = prev.peakPnL || 0
+    let currentDrawdown = prev.currentDrawdown || 0
+    let status = strategy.status
+
+    if (newPnl > peakPnL) {
+      peakPnL = newPnl
+      currentDrawdown = 0
+    } else {
+      currentDrawdown = peakPnL - newPnl
+    }
+
+    const threshold = prev.maxDrawdownThreshold || 20
+    if (currentDrawdown > threshold) {
+      console.warn(`[CIRCUIT BREAKER] Strategy ${strategyId} paused due to drawdown (${currentDrawdown.toFixed(2)}% > ${threshold}%)`)
+      status = 'paused'
+    }
+
     await Strategy.findByIdAndUpdate(strategyId, {
       'stats.totalTrades':  newTotal,
       'stats.totalPnL':     parseFloat(newPnl.toFixed(3)),
       'stats.winRate':      parseFloat((newWins / newTotal).toFixed(4)),
       'stats.sharpeRatio':  sharpeRatio,
+      'stats.peakPnL':      parseFloat(peakPnL.toFixed(3)),
+      'stats.currentDrawdown': parseFloat(currentDrawdown.toFixed(3)),
+      status,
       $inc: { usageCount: 1 },
     })
 
