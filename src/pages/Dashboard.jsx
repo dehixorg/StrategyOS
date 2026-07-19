@@ -65,7 +65,7 @@ export default function Dashboard() {
     try {
       await api.post('/execution/activate', { strategyId: id })
       toast.success('Strategy activated — auto-runs every 5 minutes.')
-      fetchStrategies()
+      fetchStrategiesAndProfile()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to activate.')
     } finally {
@@ -78,7 +78,7 @@ export default function Dashboard() {
     try {
       await api.post('/execution/pause', { strategyId: id })
       toast.info('Strategy paused.')
-      fetchStrategies()
+      fetchStrategiesAndProfile()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to pause.')
     } finally {
