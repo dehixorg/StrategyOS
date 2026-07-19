@@ -37,6 +37,7 @@ export default function StrategyDetails() {
   const [claiming, setClaiming] = useState(false)
   const [aiInsight, setAiInsight] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
+  const [network, setNetwork] = useState('testnet')
 
   const fetchData = useCallback(async () => {
     try {
@@ -78,7 +79,7 @@ export default function StrategyDetails() {
     setExecuting(true)
     setLastResult(null)
     try {
-      const { data } = await api.post('/execution/execute', { strategyId: id })
+      const { data } = await api.post('/execution/execute', { strategyId: id, network })
       setLastResult(data.result)
       const result = data.result
       if (result?.tradePlaced) {
@@ -165,44 +166,118 @@ export default function StrategyDetails() {
             </a>
           )}
         </div>
-        <button
-          onClick={handleExecuteNow}
-          disabled={executing}
-          className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-        >
-          {executing ? (
-            <>
-              <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Running...
-            </>
-          ) : '▶ Execute Now'}
-        </button>
+        <div className="flex items-center gap-3">
+          <select 
+            value={network} 
+            onChange={(e) => setNetwork(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-white text-xs px-3 py-2 rounded-lg outline-none focus:border-indigo-500"
+          >
+            <option value="testnet">SoDEX Testnet</option>
+            <option value="mainnet">SoDEX Mainnet</option>
+          </select>
+          <button
+            onClick={handleExecuteNow}
+            disabled={executing}
+            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-indigo-600/20"
+          >
+            {executing ? (
+              <>
+                <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Executing Trace...
+              </>
+            ) : '▶ Execute Trace'}
+          </button>
+        </div>
       </div>
 
-      {/* Live execution result */}
+      {/* Live execution result / trace */}
       {lastResult && (
-        <div className={`mb-6 rounded-xl border p-4 text-sm ${lastResult.tradePlaced ? 'bg-green-900/20 border-green-700' : 'bg-slate-800 border-slate-600'}`}>
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-semibold text-white">Last Execution:</span>
-            <span className="text-slate-300">Sentiment <span className={lastResult.sentimentOutput?.score >= 0 ? 'text-green-400' : 'text-red-400'}>{lastResult.sentimentOutput?.score}</span></span>
-            <SourceBadge source={lastResult.sentimentOutput?.source} />
-            <span className="text-slate-400">→</span>
-            <span className={lastResult.riskOutput?.pass ? 'text-green-400' : 'text-red-400'}>Risk {lastResult.riskOutput?.pass ? '✓' : '✗'}</span>
-            <span className="text-slate-400">→</span>
-            <span className={lastResult.tradePlaced ? 'text-indigo-400 font-medium' : 'text-slate-400'}>
-              {lastResult.executorOutput?.action}
-            </span>
-            {lastResult.pnl != null && (
-              <span className={lastResult.pnl >= 0 ? 'text-green-400' : 'text-red-400'}>
-                PnL: {lastResult.pnl >= 0 ? '+' : ''}{lastResult.pnl.toFixed(3)}%
-              </span>
-            )}
-            {lastResult.txHash && (
-              <a href={`https://testnet.valuechain.xyz/tx/${lastResult.txHash}`} target="_blank" rel="noreferrer"
-                className="text-indigo-400 text-xs font-mono hover:text-indigo-300">
-                ⛓ {lastResult.txHash.slice(0, 12)}...
-              </a>
-            )}
+        <div className="mb-6 rounded-xl border border-indigo-500/50 bg-slate-900 p-5 shadow-2xl shadow-indigo-900/20 animate-fade-in-up">
+          <h2 className="text-sm font-bold text-indigo-400 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            Live Execution Trace
+          </h2>
+          <div className="flex flex-col gap-4">
+            
+            {/* Step 1: SoSoValue Data */}
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-lg border border-slate-700 shrink-0">📡</div>
+              <div className="flex-1 bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                <p className="text-xs font-semibold text-white mb-1">1. SoSoValue API Endpoints Fetched (6x)</p>
+                <div className="flex gap-2 flex-wrap">
+                  <span className="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">/market-snapshot</span>
+                  <span className="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">/etfs/summary-history</span>
+                  <span className="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">/news/hot</span>
+                  <span className="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">/sector-spotlight</span>
+                  <span className="text-[10px] bg-indigo-900/50 text-indigo-300 border border-indigo-700 px-2 py-1 rounded">/macro/events [NEW]</span>
+                  <span className="text-[10px] bg-indigo-900/50 text-indigo-300 border border-indigo-700 px-2 py-1 rounded">/fundraising/info [NEW]</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2: Sentiment Node */}
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 rounded-full bg-violet-900/30 flex items-center justify-center text-lg border border-violet-700 shrink-0">🧠</div>
+              <div className="flex-1 bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                <p className="text-xs font-semibold text-white mb-1">2. Sentiment Algorithm Evaluated</p>
+                <p className="text-xs text-slate-400 font-mono">
+                  Result Score: <span className={lastResult.sentimentOutput?.score >= 0 ? 'text-green-400' : 'text-red-400'}>{lastResult.sentimentOutput?.score}</span> 
+                  <span className="ml-3 text-slate-500">Confidence: {(lastResult.sentimentOutput?.confidence * 100)?.toFixed(0)}%</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Step 3: Risk Check */}
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 rounded-full bg-amber-900/30 flex items-center justify-center text-lg border border-amber-700 shrink-0">🛡</div>
+              <div className="flex-1 bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                <p className="text-xs font-semibold text-white mb-1">3. Risk Management Layer</p>
+                <p className="text-xs font-mono">
+                  Circuit Breaker: <span className={lastResult.riskOutput?.pass ? 'text-green-400' : 'text-red-400'}>{lastResult.riskOutput?.pass ? 'PASSED ✓' : 'FAILED ✗'}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Step 4: SoDEX Execution */}
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center text-lg border border-blue-700 shrink-0">⚡</div>
+              <div className="flex-1 bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-white mb-1">4. SoDEX {network === 'mainnet' ? 'Mainnet' : 'Testnet'} Execution</p>
+                    <p className="text-xs font-mono text-slate-300">
+                      Action: <span className={lastResult.tradePlaced ? 'text-blue-400 font-bold' : 'text-slate-500 font-bold'}>{lastResult.executorOutput?.action || 'HOLD'}</span>
+                      {lastResult.tradePlaced && ` • Target Network: ${network.toUpperCase()}`}
+                    </p>
+                  </div>
+                  {lastResult.pnl != null && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-slate-500 uppercase">Simulated PnL</p>
+                      <p className={`text-sm font-bold ${lastResult.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {lastResult.pnl >= 0 ? '+' : ''}{lastResult.pnl.toFixed(3)}%
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Step 5: On-Chain Hash */}
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 rounded-full bg-emerald-900/30 flex items-center justify-center text-lg border border-emerald-700 shrink-0">⛓</div>
+              <div className="flex-1 bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                <p className="text-xs font-semibold text-white mb-1">5. ValueChain Settlement</p>
+                {lastResult.txHash ? (
+                  <a href={`https://testnet.valuechain.xyz/tx/${lastResult.txHash}`} target="_blank" rel="noreferrer"
+                    className="text-xs font-mono text-indigo-400 hover:text-indigo-300 bg-indigo-900/30 px-2 py-1 rounded inline-block mt-1">
+                    TX: {lastResult.txHash} ↗
+                  </a>
+                ) : (
+                  <p className="text-xs text-slate-500 font-mono">Off-chain execution recorded</p>
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
       )}

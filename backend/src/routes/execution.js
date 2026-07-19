@@ -58,7 +58,7 @@ router.get('/status/:strategyId', auth, async (req, res) => {
 // Manual trigger for testing
 router.post('/execute', auth, async (req, res) => {
   try {
-    const { strategyId } = req.body
+    const { strategyId, network } = req.body
     const strategy = await Strategy.findOne({ _id: strategyId, creatorId: req.userId })
     if (!strategy) return res.status(404).json({ message: 'Strategy not found' })
 
@@ -68,7 +68,7 @@ router.post('/execute', auth, async (req, res) => {
       await strategy.save()
     }
 
-    const result = await executeStrategy(strategyId)
+    const result = await executeStrategy(strategyId, network)
 
     if (!wasActive) {
       await Strategy.findByIdAndUpdate(strategyId, { status: 'paused' })

@@ -50,7 +50,7 @@ function getSosoToken() {
 
 // Convert a MongoDB ObjectId string to a bytes32 value
 function toBytes32(str) {
-  const hex = Buffer.from(str.slice(0, 31), 'utf8').toString('hex').padEnd(62, '0')
+  const hex = Buffer.from(str.slice(0, 31), 'utf8').toString('hex').padEnd(64, '0')
   return '0x' + hex
 }
 

@@ -51,11 +51,13 @@ function unwrap(res) {
 }
 
 /**
- * Compute sentiment score (-100 to +100) and confidence (0-1) from 4 signals:
- *   1. Price momentum     (weight 0.40) — 24h change_pct from market-snapshot
- *   2. ETF net flow       (weight 0.30) — BTC/ETH ETF inflows (institutional signal)
- *   3. News volume        (weight 0.20) — hot news count as attention proxy
- *   4. Sector performance (weight 0.10) — avg sector 24h change from sector-spotlight
+ * Compute sentiment score (-100 to +100) and confidence (0-1) from 6 signals:
+ *   1. Price momentum     (weight 0.30)
+ *   2. ETF net flow       (weight 0.25)
+ *   3. News volume        (weight 0.15)
+ *   4. Sector performance (weight 0.10)
+ *   5. Macro events       (weight 0.10)
+ *   6. Fundraising data   (weight 0.10)
  */
 async function getSentiment(pair = 'BTC/USD') {
   const http = client()
@@ -65,7 +67,7 @@ async function getSentiment(pair = 'BTC/USD') {
   const symbol     = CURRENCY_SYMBOL[currencyId] || 'bitcoin'
   const etfInfo    = ETF_TICKERS[symbol]
 
-  const [snapshotRes, etfRes, hotNewsRes, sectorRes] = await Promise.allSettled([
+  const [snapshotRes, etfRes, hotNewsRes, sectorRes, macroRes, fundRes] = await Promise.allSettled([
     http.get(`/currencies/${currencyId}/market-snapshot`),
     etfInfo
       ? http.get(`/etfs/summary-history`, {
@@ -78,6 +80,8 @@ async function getSentiment(pair = 'BTC/USD') {
       : Promise.reject(new Error('no etf')),
     http.get('/news/hot', { params: { page: 1, page_size: 50, language: 'en' } }),
     http.get('/currencies/sector-spotlight'),
+    http.get('/macro/events', { params: { limit: 5 } }),
+    http.get('/fundraising/info', { params: { limit: 5 } })
   ])
 
   // ── Signal 1: Price momentum ──────────────────────────────────────────────
@@ -128,8 +132,31 @@ async function getSentiment(pair = 'BTC/USD') {
     }
   }
 
+  // ── Signal 5: Macro events ───────────────────────────────────────────────
+  let macroScore = 0
+  if (macroRes.status === 'fulfilled') {
+    const payload = unwrap(macroRes.value)
+    const events = Array.isArray(payload) ? payload : (payload?.list || [])
+    // Simple heuristic: count of positive vs negative keywords in event title
+    events.forEach(e => {
+      const title = (e.title || '').toLowerCase()
+      if (title.includes('cut') || title.includes('easing') || title.includes('growth')) macroScore += 10
+      if (title.includes('hike') || title.includes('inflation') || title.includes('war')) macroScore -= 10
+    })
+    macroScore = Math.max(-30, Math.min(30, macroScore))
+  }
+
+  // ── Signal 6: Fundraising ────────────────────────────────────────────────
+  let fundScore = 0
+  if (fundRes.status === 'fulfilled') {
+    const payload = unwrap(fundRes.value)
+    const rounds = Array.isArray(payload) ? payload : (payload?.list || [])
+    const totalAmount = rounds.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0)
+    fundScore = Math.max(0, Math.min(30, totalAmount / 1000000)) // Max 30 points if >= $30M recently raised
+  }
+
   // ── Weighted composite ────────────────────────────────────────────────────
-  const rawScore = momentumScore * 0.40 + etfScore * 0.30 + newsScore * 0.20 + sectorScore * 0.10
+  const rawScore = momentumScore * 0.30 + etfScore * 0.25 + newsScore * 0.15 + sectorScore * 0.10 + macroScore * 0.10 + fundScore * 0.10
   const score    = Math.round(Math.max(-100, Math.min(100, rawScore)))
   const confidence = Math.min(1, Math.max(0.3, newsConfidence + (priceDataOk ? 0.1 : 0)))
 
@@ -235,6 +262,30 @@ async function getSectorSpotlight() {
   }
 }
 
+/**
+ * Macro events calendar.
+ */
+async function getMacroEvents() {
+  const http = client()
+  if (!http) return []
+  try {
+    const res = await http.get('/macro/events', { params: { limit: 10 } })
+    return unwrap(res) || []
+  } catch { return [] }
+}
+
+/**
+ * Fundraising data.
+ */
+async function getFundraisingInfo() {
+  const http = client()
+  if (!http) return []
+  try {
+    const res = await http.get('/fundraising/info', { params: { limit: 10 } })
+    return unwrap(res) || []
+  } catch { return [] }
+}
+
 // ── Mock fallbacks ────────────────────────────────────────────────────────────
 
 function mockSentiment(pair) {
@@ -260,4 +311,4 @@ function mockMarketData(pair) {
   }
 }
 
-module.exports = { getSentiment, getMarketData, getKlines, getNews, getEtfFlows, getSectorSpotlight }
+module.exports = { getSentiment, getMarketData, getKlines, getNews, getEtfFlows, getSectorSpotlight, getMacroEvents, getFundraisingInfo }

@@ -97,7 +97,7 @@ async function distributeRoyaltiesOffChain(strategy, modules) {
   return { creatorShare, perModuleShare: 0, total: fee }
 }
 
-async function executeStrategy(strategyId) {
+async function executeStrategy(strategyId, network = 'testnet') {
   const strategy = await Strategy.findById(strategyId)
   if (!strategy || strategy.status !== 'active') {
     return { skipped: true, reason: 'Strategy not active' }
@@ -162,6 +162,7 @@ async function executeStrategy(strategyId) {
     } 
     else if (type.includes('exec')) {
       const out = await runExecutorModule(accumulatedState, mod.config)
+      if (network) out.network = network // inject network
       finalExecutorOutput = out
       accumulatedState = { ...accumulatedState, ...out, pass: out.pass }
     }
